@@ -15,7 +15,7 @@ class _SearchBarState extends State<SearchBar> {
   String _searchTerm = '';
 
   Future<List<AlgoliaObjectSnapshot>> _operation(String input) async {
-    AlgoliaQuery query = _algolia.instance.index('Posts').query(input);
+    AlgoliaQuery query = _algolia.instance.index("Posts").query(input);
     AlgoliaQuerySnapshot querySnap = await query.getObjects();
     List<AlgoliaObjectSnapshot> results = querySnap.hits;
     return results;
@@ -46,38 +46,37 @@ class _SearchBarState extends State<SearchBar> {
                   StreamBuilder<List<AlgoliaObjectSnapshot>>(
                       stream: Stream.fromFuture(_operation(_searchTerm)),
                       builder: (context, snapshot) {
-                        print('home_list_pageのsnapshotのエラー');
+                        print('snapshotのエラー');
                         print(snapshot.error);
-                        return snapshot.hasData && snapshot.data!.isNotEmpty
-                        ? ListView.builder(
-                          scrollDirection: Axis.vertical,
-                          shrinkWrap: true,
-                          itemCount: snapshot.data!.length,
-                          itemBuilder: (context, index) {
-                            List<AlgoliaObjectSnapshot>? currSearchStuff = snapshot.data;
-                            switch (snapshot.connectionState) {
-                     case ConnectionState.waiting: return Container();
-                     default:
-                       if (snapshot.hasError) {
-                         return   Text('Error: ${snapshot.error}');
-                       } else {
-                         return CustomScrollView(shrinkWrap: true,
-                      slivers: <Widget>[
-                        SliverList(
-                          delegate: SliverChildBuilderDelegate(
-                            (context,  index) {
-                              return _searchTerm.isNotEmpty ? DisplaySearchResult(artDes: currSearchStuff![index].data["artShowDescription"], artistName: currSearchStuff[index].data["artistName"], genre: currSearchStuff[index].data["genre"],) 
-                              : Container();
-                            },
-                            childCount: currSearchStuff!.length,
-                          ),
-                        ),
-                    ],
-                    );
-                       } }
-                          },
-                        )
-                        : const CupertinoActivityIndicator();
+                        if (snapshot.hasData) {
+                          List<AlgoliaObjectSnapshot>? currSearchStuff =
+                              snapshot.data;
+                          print(currSearchStuff!.length);
+                          switch (snapshot.connectionState) {
+                            case ConnectionState.waiting:
+                              return const CupertinoActivityIndicator();
+                            default: // どの「case」にも当てはまらないとき
+                              if (snapshot.hasError) {
+                                return Text('Error: ${snapshot.error}');
+                              } else {
+                                return ListView.builder(
+                                  scrollDirection: Axis.vertical,
+                                  shrinkWrap: true,
+                                  itemCount: currSearchStuff.length,
+                                  itemBuilder: (context, index) {
+                                    return _searchTerm.isNotEmpty
+                                        ? DisplaySearchResult(
+                                            artDes: currSearchStuff[index]
+                                                .data["name"],
+                                          )
+                                        : Container();
+                                  },
+                                );
+                              }
+                          }
+                        } else {
+                          return const CupertinoActivityIndicator();
+                        }
                       })
                 ],
               ),
@@ -87,21 +86,17 @@ class _SearchBarState extends State<SearchBar> {
 
 class DisplaySearchResult extends StatelessWidget {
   final String artDes;
-  final String artistName;
-  final String genre;
 
-  const DisplaySearchResult({Key? key, required this.artistName, required this.artDes, required this.genre}) : super(key: key);
+  const DisplaySearchResult({Key? key, required this.artDes}) : super(key: key);
 
-   @override
+  @override
   Widget build(BuildContext context) {
-    return Column(
-      children: <Widget>[
-        Text(artDes, style: const TextStyle(color: Colors.black ),),
-        Text(artistName, style: const TextStyle(color: Colors.black ),),
-        Text(genre, style: const TextStyle(color: Colors.black ),),
-        const Divider(color: Colors.black,),
-        const SizedBox(height: 20)
-      ]
-    );
+    return Column(children: [
+      Text(
+        artDes,
+        style: const TextStyle(color: Colors.black),
+      ),
+      const SizedBox(height: 20)
+    ]);
   }
 }
